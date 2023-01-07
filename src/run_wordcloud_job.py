@@ -1,25 +1,23 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
+#import seaborn as sns
 import tweepy as tw
 from wordcloud import STOPWORDS, WordCloud
 import numpy as np
 from PIL import Image
-import src.word_colouring as wc
+import word_colouring as wc
 import warnings
-import os
 warnings.filterwarnings("ignore")
-# :)
-sns.set(font_scale=1.5)
-sns.set_style("whitegrid")
 
-os.chdir('..')
+# sns.set(font_scale=1.5)
+# sns.set_style("whitegrid")
 
 class new_wordcloud:
 
     def __init__(self, player_df) -> None:
-        self.bearer_token1 = os.getenv("BEARER_TOKEN1")
-        self.bearer_token2 = os.getenv("BEARER_TOKEN2")
+        
+        self.bearer_token1 = 'AAAAAAAAAAAAAAAAAAAAADSvdgEAAAAAmw3P5GYdOs4kanpVkdzMKp0zOck%3DgmSSBWJtumsCQ2aaycMaMcvlQ4vIeVEtCXnCjvsYrGPKFZAy4g'
+        self.bearer_token2 = 'AAAAAAAAAAAAAAAAAAAAAHjCfAEAAAAAu29%2BwwrHh6tEGPqCJ8VNeN77XgQ%3Dlq53xeUMIFpHb35KyRlYno7DQr2bZ0q2fgXEGf5GTp9v5VLInJ'
         #self.players = self.import_df()
         self.players = player_df
         self.team_mapping = {
@@ -106,7 +104,17 @@ class new_wordcloud:
         self.stopwords_list.append('henry')
         self.stopwords_list.append('palmer')
         self.stopwords_list.append('young')
-
+        self.stopwords_list.append('evans')
+        self.stopwords_list.append('pérez')
+        self.stopwords_list.append('bueno')
+        self.stopwords_list.append('dias')
+        self.stopwords_list.append('pérez')
+        self.stopwords_list.append('taylor')
+        self.stopwords_list.append('cook')
+        self.stopwords_list.append('justin')
+        self.stopwords_list.append('hill')
+        self.stopwords_list.append('anthony')
+        self.stopwords_list.append('smith')
         
     def get_tweet_count(self, player, bearer_token):
         client = tw.Client(bearer_token=bearer_token, wait_on_rate_limit=True)
@@ -174,7 +182,7 @@ class new_wordcloud:
         samples = self.run_twitter_queries2(self.players)            
         players_dict = dict(samples[['player', 'number of tweets']].values)
 
-        mask = np.array(Image.open('src/old_prem.png'))
+        mask = np.array(Image.open('old_prem.png'))
         # # Generate wordcloud
         wordcloud = WordCloud(font_path='Staatliches-Regular.ttf', random_state=1, mask=mask, background_color="black", mode="RGBA", width=mask.shape[1],
                     height=mask.shape[0], colormap='Set2', collocations=False)

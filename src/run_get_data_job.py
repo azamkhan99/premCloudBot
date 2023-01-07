@@ -4,6 +4,9 @@ from datetime import timedelta
 #from time import sleep
 import pandas as pd
 from fuzzywuzzy import fuzz
+from fplapi import main
+import asyncio
+import boto3
 pd.set_option('display.max_columns', None)
 
 
@@ -14,53 +17,30 @@ class playerDataset:
 
     
     def get_fpl_df(self):
+        key = 'fpl_players.csv'
+        bucket = 'premcloudbot'
+        s3_client = boto3.client('s3')
+        
+        
+        # for key in s3_resource.list_objects(Bucket=bucket)['Contents']:
+        #     print(key['Key'])
+        
+        resp = s3_client.get_object(Bucket=bucket, Key=key)
+        df = pd.read_csv(resp['Body'], sep=',')
+        #df = pd.read_csv(data)
+        # df = pd.read_csv('fpl_players.csv')
+        print(df.sample(2))
 
-        team_mapping = {
-            1: "Arsenal",
-            2: "Aston Villa",
-            3: "AFC Bournemouth",
-            4: "Brentford",
-            5: "Brighton & Hove Albion",
-            6: "Chelsea",
-            7: "Crystal Palace",
-            8: "Everton",
-            9: "Fulham",
-            11: "Leeds United",
-            10: "Leicester City",
-            12: "Liverpool",
-            13: "Manchester City",
-            14: "Manchester United",
-            15: "Newcastle United",
-            16: "Nottingham Forest",
-            17: "Southampton",
-            18: "Tottenham Hotspur",
-            19: "West Ham United",
-            20: "Wolverhampton"
-    }
-
-        base_url = 'https://fantasy.premierleague.com/api/'
-        # get data from bootstrap-static endpoint
-        r = requests.get(base_url+'bootstrap-static/').json()
-        # get player data from 'elements' field
-        players = r['elements']
-        # create players dataframe
-        players = pd.json_normalize(r['elements'])
-        # get relevant columns
-        players = players[['id', 'web_name', 'first_name', 'second_name', 'team', 'element_type']]
-        players['full_name'] = players[['first_name', 'second_name']].apply(lambda x: ' '.join(x), axis=1)
-        # map team number to team name
-        players['team_name'] = players['team'].apply(lambda x: team_mapping[x])
-
-        return players
+        return df
 
     # Get the data from API
 
     def scrape_whoscored(self, id, homeTeam, awayTeam):
         url = f"https://api.sofascore.com/api/v1/event/{id}/lineups"
         headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:66.0) Gecko/20100101 Firefox/66.0"}
-        r = requests.get(url, headers=headers)
-        json_data = r.json()
 
+        r = requests.get(url, headers=headers, proxies = {'http': '133.18.195.135:8080'})
+        json_data = r.json()
         home_players_json = json_data["home"]["players"]
         away_players_json = json_data["away"]["players"]
 
@@ -90,13 +70,9 @@ class playerDataset:
         ids = {}
         for day in range(days):
             when = datetime.datetime.strptime(start_date, '%Y-%m-%d').date() - timedelta(days=day)
-            #print(when)
             url = f"https://api.sofascore.com/api/v1/sport/football/scheduled-events/{when}"
-            headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:66.0) Gecko/20100101 Firefox/66.0"}
-            r = requests.get(url, headers=headers)
+            r = requests.get(url, headers={'User-Agent': 'Firefox/66.0'}, proxies = {'http': '133.18.195.135:8080'})
             json_data = r.json()
-
-            
 
             for x in json_data['events']:
                 if(x['tournament']['name'] == 'Premier League' and x['tournament']['category']['name'] == 'England') \
@@ -128,11 +104,12 @@ class playerDataset:
             return ls[0]
         else:
             return ''
-
+#:)
     def produce_df(self):
         fpl_df = self.get_fpl_df()
         print("got fpl players")
-        all_players_df = self.goThroughGameDay(self.date, 6)
+        # return fpl_df
+        all_players_df = self.goThroughGameDay(self.date, 3)
         print("got players from this gameweek")
         if (len(all_players_df) > 0):
             all_players_df['known_as'] = all_players_df.apply(lambda x: self.in_name2(x['player'], x['team_name'], fpl_df), axis=1)
