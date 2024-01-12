@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
 import tweepy
-import run_get_data_job
-import run_wordcloud_job
+from run_get_data_job import playerDataset
+from run_wordcloud_job import new_wordcloud
 import datetime
+import re
 
 ROOT = Path(__file__).resolve().parents[0]
 
@@ -12,20 +13,20 @@ def get_tweet():
     """Get tweet to post"""
 
     #get players who played this week
-    #get count of tweets for each player
+    #get GW transferred_in count for each player
     #create wordcloud
     
     date = datetime.datetime.today().strftime('%Y-%m-%d')
     #date = '2022-05-22'
     
-    player_df = run_get_data_job.playerDataset(date).player_df
+    player_df = playerDataset(date).player_df
     if (type(player_df) == str):
         text = 'Oops! Looks like the Premier League is on International Break :\'('
         return player_df, text
     else:
         print("initi wordcloud")
-        wordcloud = run_wordcloud_job.new_wordcloud(player_df).wordcloud
-        text = "#FPL #PL\nA Word cloud of Premier League players who participated in the most recent Matchweek!"
+        wordcloud = new_wordcloud(player_df).wordcloud
+        text = "🔄 FPL Transfer Buzz! Check out this Word Cloud highlighting this week's most transferred-in Premier League players. ⚽📊 #FPL #GameweekTrends"
         return wordcloud, text
 
 
@@ -40,9 +41,10 @@ def lambda_handler(event, context):
     access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
 
     print("Authenticate")
-    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-    auth.set_access_token(access_token, access_token_secret)
-    api = tweepy.API(auth)
+    tweepy_auth = tweepy.OAuth1UserHandler(consumer_key, consumer_secret, access_token, access_token_secret)
+    tweepy_api = tweepy.API(tweepy_auth)
+
+    client = tweepy.Client(consumer_key=consumer_key, consumer_secret=consumer_secret, access_token=access_token, access_token_secret=access_token_secret)
 
     print("Get tweet")
     media, tweet = get_tweet()
@@ -50,6 +52,10 @@ def lambda_handler(event, context):
     media.to_file("/tmp/media.png")
 
     print(f"Post tweet: {tweet}")
-    api.update_status_with_media(status=tweet, filename='/tmp/media.png')
+    post = tweepy_api.simple_upload("/tmp/media.png")
+    text = str(post)
+    media_id = re.search("media_id=(.+?),", text).group(1)
+    
+    client.create_tweet(text=tweet, media_ids = [media_id],user_auth=True)
 
     return {"statusCode": 200, "tweet": tweet}
