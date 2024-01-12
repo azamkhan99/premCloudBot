@@ -5,3 +5,4 @@
 **/*.ipynb
 # Ignore venv folder and everything in it
 venv/
+.vscode/
