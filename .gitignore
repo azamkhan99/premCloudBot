@@ -3,3 +3,5 @@
 **/__pycache__/
 # Ignore ipynb files
 **/*.ipynb
+# Ignore venv folder and everything in it
+venv/

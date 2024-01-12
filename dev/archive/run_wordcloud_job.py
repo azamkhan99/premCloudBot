@@ -16,7 +16,6 @@ class new_wordcloud:
 
     def __init__(self, player_df) -> None:
         
-        self.bearer_token = 'AAAAAAAAAAAAAAAAAAAAADSvdgEAAAAA8cjhwVlgHxfqrl8B3tAPo8N3ZDY%3DbsIf3O2IuSVcSKgWU2LRZxwqu2W8ULEonebjvvyhshpKPDZqsD'
         self.players = player_df
         
         self.colour_teams = {
